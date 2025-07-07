@@ -211,7 +211,7 @@ def read_fastq_in_chunk(r1_path, r2_path, variant_up, variant_down, barcode_up, 
         # Because process_read_pair is very fast, we can use a larger batch size
         # to make better use of CPU resources
         # if no batch, CPU is only 20% utilized
-        batch_size = 5000
+        batch_size = min(chunk_size, 5000)
         read_batches = [
             list(zip(r1_chunk[i:i+batch_size], r2_chunk[i:i+batch_size]))
             for i in range(0, len(r1_chunk), batch_size)
@@ -240,9 +240,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Extract variant and barcode from paired-end FASTQ files.", allow_abbrev = False)
     parser.add_argument("--read1",            type = str, required = True, help = "Read 1 FASTQ file")
     parser.add_argument("--read2",            type = str, required = True, help = "Read 2 FASTQ file")
-    parser.add_argument("--variant_len",      type = int, required = True, help = "Length of the variant sequence")
     parser.add_argument("--variant_up",       type = str, required = True, help = "Upstream flank for variant sequence")
     parser.add_argument("--variant_down",     type = str, required = True, help = "Downstream flank for variant sequence")
+    parser.add_argument("--variant_check",    action="store_true",         help = "Enable variant checking against length")
+    parser.add_argument("--variant_len",      type = int, required = True, help = "Length of the variant sequence")
     parser.add_argument("--barcode_temp",     type = str, required = True, help = "Template for barcode sequence (e.g., 'NNATNNNNATNNNNATNNNN')")
     parser.add_argument("--barcode_up",       type = str, required = True, help = "Sequence before barcode in read2")
     parser.add_argument("--barcode_down",     type = str, required = True, help = "Sequence after barcode in read2")
@@ -276,34 +277,40 @@ if __name__ == "__main__":
     count_vardown_notfound = 0
     count_barup_notfound = 0
     count_bardown_notfound = 0
-    count_variant_length = 0
+    if args.variant_check:
+        count_variant_length = 0
     if args.barcode_check:
         count_barcode_pattern = 0
     count_effective_reads = 0
     all_results_filtered = []
+    
     for (variant_seq, barcode_seq) in all_results:
         if variant_seq == "upstream not found":
             count_varup_notfound += 1
-        elif variant_seq == "downstream not found":
+            continue
+
+        if variant_seq == "downstream not found":
             count_vardown_notfound += 1
-        else:
-            if barcode_seq == "upstream not found":
-                count_barup_notfound += 1
-            elif barcode_seq == "downstream not found":
-                count_bardown_notfound += 1
-            else:
-                if len(variant_seq) != args.variant_len:
-                    count_variant_length += 1
-                else:
-                    if args.barcode_check:
-                        if check_barcode(reverse_complement(barcode_seq), args.barcode_temp.upper(), args.barcode_mismatch):
-                            count_effective_reads += 1
-                            all_results_filtered.append((variant_seq, reverse_complement(barcode_seq)))
-                        else:
-                            count_barcode_pattern += 1
-                    else:
-                        count_effective_reads += 1
-                        all_results_filtered.append((variant_seq, reverse_complement(barcode_seq)))
+            continue
+
+        if barcode_seq == "upstream not found":
+            count_barup_notfound += 1
+            continue
+
+        if barcode_seq == "downstream not found":
+            count_bardown_notfound += 1
+            continue
+
+        if args.variant_check and len(variant_seq) != args.variant_len:
+            count_variant_length += 1
+            continue
+
+        if args.barcode_check and not check_barcode(reverse_complement(barcode_seq), args.barcode_temp.upper(), args.barcode_mismatch):
+            count_barcode_pattern += 1
+            continue
+
+        count_effective_reads += 1
+        all_results_filtered.append((variant_seq, reverse_complement(barcode_seq)))
 
     with open(args.log_file, "w") as f:
         f.write(f"Total reads processed: {len(all_results)}\n")
@@ -311,7 +318,8 @@ if __name__ == "__main__":
         f.write(f"Total reads with variant downstream not found: {count_vardown_notfound}\n")
         f.write(f"Total reads with barcode upstream not found: {count_barup_notfound}\n")
         f.write(f"Total reads with barcode downstream not found: {count_bardown_notfound}\n")
-        f.write(f"Total reads with variant length inconsistent: {count_variant_length}\n")
+        if args.variant_check:
+            f.write(f"Total reads with variant length inconsistent: {count_variant_length}\n")
         if args.barcode_check:
             f.write(f"Total reads with barcode pattern mismatch: {count_barcode_pattern}\n")
         f.write(f"Total effective reads: {count_effective_reads}\n")
