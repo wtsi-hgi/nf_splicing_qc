@@ -243,11 +243,11 @@ if __name__ == "__main__":
     parser.add_argument("--variant_up",       type = str, required = True, help = "Upstream flank for variant sequence")
     parser.add_argument("--variant_down",     type = str, required = True, help = "Downstream flank for variant sequence")
     parser.add_argument("--variant_check",    action="store_true",         help = "Enable variant checking against length")
-    parser.add_argument("--variant_len",      type = int, required = True, help = "Length of the variant sequence")
-    parser.add_argument("--barcode_temp",     type = str, required = True, help = "Template for barcode sequence (e.g., 'NNATNNNNATNNNNATNNNN')")
+    parser.add_argument("--variant_len",      type = int,                  help = "Length of the variant sequence")
     parser.add_argument("--barcode_up",       type = str, required = True, help = "Sequence before barcode in read2")
     parser.add_argument("--barcode_down",     type = str, required = True, help = "Sequence after barcode in read2")
     parser.add_argument("--barcode_check",    action="store_true",         help = "Enable barcode checking against template")
+    parser.add_argument("--barcode_temp",     type = str,                  help = "Template for barcode sequence (e.g., 'NNATNNNNATNNNNATNNNN')")
     parser.add_argument("--barcode_mismatch", type = int, default = 1,     help = "Number of mismatches allowed in barcode checking")
     parser.add_argument("--max_mismatches",   type = int, default = 2,     help = "Max mismatches allowed in up/down matches")
     parser.add_argument("--min_barcov",       type = int, default = 1,     help = "Minimum coverage for barcode-variant association")
@@ -262,6 +262,12 @@ if __name__ == "__main__":
         print(f"Error: Unrecognized arguments: {' '.join(unknown)}", file=sys.stderr)
         parser.print_help()
         sys.exit(1)
+
+    if args.variant_check and args.variant_len is None:
+        parser.error("--variant_len is required when --variant_check is set")
+
+    if args.barcode_check and args.barcode_temp is None:
+        parser.error("--barcode_temp is required when --barcode_check is set")
 
     print(f"Detecting variant and barcode associations, please wait...", flush=True)
     all_results = []
