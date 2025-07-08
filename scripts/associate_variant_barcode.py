@@ -250,7 +250,7 @@ if __name__ == "__main__":
     parser.add_argument("--barcode_temp",     type = str,                  help = "Template for barcode sequence (e.g., 'NNATNNNNATNNNNATNNNN')")
     parser.add_argument("--barcode_mismatch", type = int, default = 1,     help = "Number of mismatches allowed in barcode checking")
     parser.add_argument("--max_mismatches",   type = int, default = 2,     help = "Max mismatches allowed in up/down matches")
-    parser.add_argument("--min_barcov",       type = int, default = 1,     help = "Minimum coverage for barcode-variant association")
+    parser.add_argument("--min_barcov",       type = int, default = 2,     help = "Minimum coverage for barcode-variant association")
     parser.add_argument("--chunk_size",       type = int, default = 5000,  help = "Chunk size for processing reads")
     parser.add_argument("--threads",          type = int, default = 12,    help = "Number of threads")
     parser.add_argument("--output_file",      type = str, default = "variant_barcode_association.txt", help = "Output file")
