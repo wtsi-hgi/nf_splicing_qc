@@ -2,7 +2,6 @@
 import sys
 import pandas as pd
 import numpy as np
-from tqdm.auto import tqdm
 import io
 import os
 from collections import Counter
@@ -35,8 +34,8 @@ maxerrs = 2 #maximum number of mismatch allowd
 upstreamflank = sys.argv[3] #constant sequence before the start of the variable sequence (already specified in the .sh file)
 downstreamflank = sys.argv[4] #constant sequence after the end of the variable sequence (already specified in the .sh file)
 exonposition = len(upstreamflank) #where is the start of the variant sequence (1 nt after the end of the constant part rigth upstream)
-exonlen = sys.argv[5] #length of the variant (already specified in the .sh file)
-lenfile1 = exonposition+exonlen+len(downstreamflank)
+# exonlen = sys.argv[5] #length of the variant (already specified in the .sh file)
+# lenfile1 = exonposition+exonlen+len(downstreamflank)
 
 
 #Barcode (read2)
@@ -93,31 +92,36 @@ for file1_line, file2_line in zip(*gens):
     length = None
     
     # first get the barcode
-    if (len(file2_line[(len(barcodeflank)):(len(barcodeflank) + barcodelen)]) !=barcodelen): #check the bc has the correct length
+    #check the bc has the correct length
+    if (len(file2_line[(len(barcodeflank)):(len(barcodeflank) + barcodelen)]) !=barcodelen): 
         tossed_due_to_length_file2 += 1
         continue
 
-    if hamming(file2_line[:len(barcodeflank)], barcodeflank) > maxerrs: #check constant part has not +2 mismatch
+    #check constant part has not +2 mismatch
+    if hamming(file2_line[:len(barcodeflank)], barcodeflank) > maxerrs: 
         readstossed += 1
         tossed_due_to_barcodeflank_mismatch += 1
         continue
     
-    if hamming(file2_line[(len(barcodeflank) + barcodelen):(len(barcodeflank) + barcodelen + len(exon7))], exon7) > maxerrs: #check constant part has not +2 mismatch
+    #check constant part has not +2 mismatch
+    if hamming(file2_line[(len(barcodeflank) + barcodelen):(len(barcodeflank) + barcodelen + len(exon7))], exon7) > maxerrs: 
         readstossed += 1
         tossed_due_to_exon7_mismatch += 1
         continue
     
-    
-    if (len(file1_line[exonposition :(exonposition + exonlen)]) < lenfile1-5 and len(file1_line[exonposition :(exonposition + exonlen)]) > lenfile1+5): #check the var has the correct length
-        tossed_due_to_length_file1 += 1
-        continue
+    #check the var has the correct length
+    # if (len(file1_line[exonposition :(exonposition + exonlen)]) < lenfile1-5 and len(file1_line[exonposition :(exonposition + exonlen)]) > lenfile1+5): 
+    #     tossed_due_to_length_file1 += 1
+    #     continue
 
-    if hamming(file1_line[:len(upstreamflank)], upstreamflank) > maxerrs: #check constant part has not +2 mismatch
+    #check constant part has not +2 mismatch
+    if hamming(file1_line[:len(upstreamflank)], upstreamflank) > maxerrs: 
         tossed_due_to_upstreamflank_mismatch += 1
         readstossed += 1
         continue
 
-    if hamming(file1_line[(len(file1_line)-len(downstreamflank)):], downstreamflank) > maxerrs: #check constant part has not +2 mismatch
+    #check constant part has not +2 mismatch
+    if hamming(file1_line[(len(file1_line)-len(downstreamflank)):], downstreamflank) > maxerrs: 
         tossed_due_to_downstreamflank_mismatch += 1
         readstossed += 1
         continue
@@ -175,6 +179,6 @@ bedf=pd.DataFrame({"barcode" : barcodeskeep,
                    "count" : counts})
 
 #save the table with barcode seq - variant seq - # reads
-bedf.to_csv("/users/project/prj004631/gquarantani/introns/barcode_variant_association/"+sys.argv[7]+"_barcode_exon_pairs_min"+sys.argv[7]+"reads_.txt",index=False,sep="\t")
+bedf.to_csv(sys.argv[7]+"_barcode_exon_pairs_min"+sys.argv[7]+"reads_.txt",index=False,sep="\t")
 
 

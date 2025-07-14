@@ -307,16 +307,16 @@ if __name__ == "__main__":
             count_bardown_notfound += 1
             continue
 
-        if args.variant_check and len(variant_seq) != args.variant_len:
+        if args.variant_check and len(variant_seq) < args.variant_len:
             count_variant_length += 1
             continue
 
-        if args.barcode_check and not check_barcode(reverse_complement(barcode_seq), args.barcode_temp.upper(), args.barcode_mismatch):
+        if args.barcode_check and not check_barcode(barcode_seq, args.barcode_temp.upper(), args.barcode_mismatch):
             count_barcode_pattern += 1
             continue
 
         count_effective_reads += 1
-        all_results_filtered.append((variant_seq, reverse_complement(barcode_seq)))
+        all_results_filtered.append((variant_seq, barcode_seq))
 
     with open(args.log_file, "w") as f:
         f.write(f"Total reads processed: {len(all_results)}\n")
@@ -334,4 +334,5 @@ if __name__ == "__main__":
     with open(args.output_file, "w") as f:
         f.write("Barcode\tVariant\tCount\n")
         for (variant, barcode), count in variant_barcode_association.items():
-            f.write(f"{barcode}\t{variant}\t{count}\n")
+            if count >= args.min_barcov:
+                f.write(f"{reverse_complement(barcode)}\t{variant}\t{count}\n")
