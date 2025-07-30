@@ -194,43 +194,43 @@ def read_fastq_in_chunk(r1_path, r2_path, variant_up, variant_down, barcode_up, 
     r1_iter = fastq_iter(r1_handle)
     r2_iter = fastq_iter(r2_handle)
 
-    while True:
-        r1_chunk = list()
-        r2_chunk = list()
-        try:
-            for _ in range(chunk_size):
-                r1_chunk.append(next(r1_iter))
-                r2_chunk.append(next(r2_iter))
-        except StopIteration:
-            pass
+    with ProcessPoolExecutor(max_workers=processes) as executor:
+        while True:
+            r1_chunk = list()
+            r2_chunk = list()
+            try:
+                for _ in range(chunk_size):
+                    r1_chunk.append(next(r1_iter))
+                    r2_chunk.append(next(r2_iter))
+            except StopIteration:
+                pass
 
-        if not r1_chunk or not r2_chunk:
-            break
+            if not r1_chunk or not r2_chunk:
+                break
 
-        # Divide chunk into batches
-        # Because process_read_pair is very fast, we can use a larger batch size
-        # to make better use of CPU resources
-        # if no batch, CPU is only 20% utilized
-        batch_size = min(chunk_size, 5000)
-        read_batches = [
-            list(zip(r1_chunk[i:i+batch_size], r2_chunk[i:i+batch_size]))
-            for i in range(0, len(r1_chunk), batch_size)
-        ]
+            # Divide chunk into batches
+            # Because process_read_pair is very fast, we can use a larger batch size
+            # to make better use of CPU resources
+            # if no batch, CPU is only 20% utilized
+            batch_size = min(chunk_size, 5000)
+            read_batches = [
+                list(zip(r1_chunk[i:i+batch_size], r2_chunk[i:i+batch_size]))
+                for i in range(0, len(r1_chunk), batch_size)
+            ]
 
-        args_list = [
-            (batch, variant_up, variant_down, barcode_up, barcode_down, max_mismatches)
-            for batch in read_batches
-        ]
+            args_list = [
+                (batch, variant_up, variant_down, barcode_up, barcode_down, max_mismatches)
+                for batch in read_batches
+            ]
 
-        with ProcessPoolExecutor(max_workers=processes) as executor:
             batch_results = list(executor.map(function_for_processpool, args_list))
 
-        # Flatten list of lists
-        results = [item for batch in batch_results for item in batch]
-        yield results
+            # Flatten list of lists
+            results = [item for batch in batch_results for item in batch]
+            yield results
 
-        if len(r1_chunk) < chunk_size:
-            break
+            if len(r1_chunk) < chunk_size:
+                break
 
     r1_handle.close()
     r2_handle.close()
