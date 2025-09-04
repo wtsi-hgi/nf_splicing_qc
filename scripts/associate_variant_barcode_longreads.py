@@ -110,20 +110,26 @@ def check_barcode(barcode_seq: str, barcode_temp: str, max_mismatches: int) -> b
         -- barcode_temp: the template sequence to match against
         -- max_mismatches: maximum number of mismatches allowed
     Returns:
-        -- bool: True if matches within allowed mismatches, False otherwise
+        -- str or None: corrected barcode sequence if matches, else None
     """
     if len(barcode_seq) != len(barcode_temp):
-        return False
+        return None
 
     mismatch_count = 0
-    for s_char, p_char in zip(barcode_seq, barcode_temp):
-        if p_char != 'N':
-            if s_char != p_char:
-                mismatch_count += 1
-                if mismatch_count > max_mismatches:
-                    return False
+    barcode_corrected = []
 
-    return True
+    for s_char, p_char in zip(barcode_seq, barcode_temp):
+        if p_char == 'N':
+            barcode_corrected.append(s_char)
+        elif s_char != p_char:
+            mismatch_count += 1
+            barcode_corrected.append(p_char)
+            if mismatch_count > max_mismatches:
+                return None
+        else:
+            barcode_corrected.append(s_char)
+
+    return "".join(barcode_corrected)
 
 def process_long_read(longread, variant_up, variant_down, barcode_up, barcode_down, max_mismatches):
     """
@@ -308,9 +314,13 @@ if __name__ == "__main__":
             count_variant_length += 1
             continue
 
-        if args.barcode_check and not check_barcode(barcode_seq, args.barcode_temp.upper(), args.barcode_mismatch):
-            count_barcode_pattern += 1
-            continue
+        if args.barcode_check:
+            barcode_corrected = check_barcode(barcode_seq, args.barcode_temp.upper(), args.barcode_mismatch)
+            if barcode_corrected is None:
+                count_barcode_pattern += 1
+                continue
+            else:
+                barcode_seq = barcode_corrected
 
         count_effective_reads += 1
         all_results_filtered.append((variant_seq, barcode_seq))
