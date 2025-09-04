@@ -3,7 +3,6 @@ import io
 import sys
 import argparse
 import subprocess
-import pysam
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor
 from collections import Counter
@@ -243,12 +242,12 @@ def read_fastq_in_chunk(longread_path, variant_up, variant_down, barcode_up, bar
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Extract variant and barcode from paired-end FASTQ files.", allow_abbrev = False)
     parser.add_argument("--longread",         type = str, required = True, help = "Long Read FASTQ file")
-    parser.add_argument("--variant_up",       type = str, required = True, help = "Upstream flank for variant sequence")
-    parser.add_argument("--variant_down",     type = str, required = True, help = "Downstream flank for variant sequence")
+    parser.add_argument("--variant_up",       type = str, required = True, help = "Upstream flank sequence of variant sequence")
+    parser.add_argument("--variant_down",     type = str, required = True, help = "Downstream flank sequence of variant sequence")
     parser.add_argument("--variant_check",    action="store_true",         help = "Enable variant checking against length")
     parser.add_argument("--variant_len",      type = int,                  help = "Length of the variant sequence")
-    parser.add_argument("--barcode_up",       type = str, required = True, help = "Sequence before barcode in read2")
-    parser.add_argument("--barcode_down",     type = str, required = True, help = "Sequence after barcode in read2")
+    parser.add_argument("--barcode_up",       type = str, required = True, help = "Upstream flank sequence of barcode sequence")
+    parser.add_argument("--barcode_down",     type = str, required = True, help = "Downstream flank sequence of barcode sequence")
     parser.add_argument("--barcode_check",    action="store_true",         help = "Enable barcode checking against template")
     parser.add_argument("--barcode_temp",     type = str,                  help = "Template for barcode sequence (e.g., 'NNATNNNNATNNNNATNNNN')")
     parser.add_argument("--barcode_mismatch", type = int, default = 1,     help = "Number of mismatches allowed in barcode checking")
