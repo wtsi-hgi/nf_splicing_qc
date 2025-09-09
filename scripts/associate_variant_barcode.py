@@ -101,7 +101,7 @@ def reverse_complement(seq: str) -> str:
     complement = str.maketrans("ACGTacgt", "TGCAtgca")
     return seq.translate(complement)[::-1]
 
-def check_barcode(barcode_seq: str, barcode_temp: str, max_mismatches: int) -> bool:
+def check_barcode(barcode_seq: str, barcode_temp: str, max_mismatches: int):
     """
     Check if barcode_seq matches the barcode_temp allowing max_mismatches
     Parameters:
